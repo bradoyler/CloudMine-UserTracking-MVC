@@ -45,8 +45,8 @@ namespace CloudMine_UserTracker
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
     public class UserTrackingAttribute : ActionFilterAttribute
     {
-        public static string appId = "1232131";
-        public static string appSecret = "1232131";
+        public static readonly string appId = "1232131";
+        public static readonly string appSecret = "1232131";
 
         public override void OnResultExecuting(ResultExecutingContext context)
         {
@@ -80,21 +80,16 @@ namespace CloudMine_UserTracker
         {
             try
             {
-                WebClient client = new WebClient();
-                WebRequest request = WebRequest.Create("https://api.cloudmine.me/v1/app/"+ appId +"/text");
-                request.Method = "PUT";
-                request.Headers.Add("X-CloudMine-ApiKey", appSecret);
-                request.ContentType = "application/json";
-                JavaScriptSerializer serializer = new JavaScriptSerializer();
-                var data = serializer.Serialize(preq);
-
-                var payload = "{\"PV_" + DateTime.Now.Ticks + "\":" + data + "}";
-                byte[] byteArray = Encoding.UTF8.GetBytes(payload);
-                request.ContentLength = byteArray.Length;
-                Stream dataStream = request.GetRequestStream();
-                dataStream.Write(byteArray, 0, byteArray.Length);
-                dataStream.Close();
-                var response = request.GetResponse();
+              using (var client = new WebClient())
+             {
+               client.Headers.Add("X-CloudMine-ApiKey", appSecret);
+               client.Headers.Add("Content-Type", "application/json");
+               var serializer = new JavaScriptSerializer();
+               var data = serializer.Serialize(preq);
+               var payload = "{\"PV_" + DateTime.Now.Ticks + "\":" + data + "}";
+               var bytes = Encoding.Default.GetBytes(payload);
+               client.UploadDataAsync(new Uri("https://api.cloudmine.me/v1/app/" + appId + "/text"), "PUT", bytes);
+              }
             }
             catch (Exception e)
             {
